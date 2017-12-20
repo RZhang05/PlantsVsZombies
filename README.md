@@ -1,5 +1,5 @@
 # Photosynthesis
-Raymond Zhang's ICS3U1 Culminating Activity
+Raymond Zhang and Vincent Chen's ICS3U1 Culminating Activity
 
 ## Gameplay
 #### Initial Board
