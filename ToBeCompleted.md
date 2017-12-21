@@ -10,7 +10,7 @@
 - [ ] Finish Zombie Spawn Code
 
 # Collective To-Do List
-- [ ] Finish Timer Object
+- [x] Finish Timer Object
 - [ ] Finish Game Board outline
 - [ ] Finish GUI
 - [ ] Finalize Game Design 
