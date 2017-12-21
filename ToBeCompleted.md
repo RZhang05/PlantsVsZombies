@@ -1,5 +1,5 @@
 # Raymond To-Do List
-- [ ] Finish Plants Class
+- [x] Finish Plants Class
 - [ ] Finish Plant Buttons
 - [ ] Finish Plant Button Implementation
 - [ ] Finish Plants
