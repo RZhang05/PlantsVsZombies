@@ -26,6 +26,8 @@ class Plant {
 
 	}
 	public int hp = 10;
+	public boolean shotInterrupted = false;
+	public int plantState = 1;
 	public int getRow()
 	{
 		return row;
@@ -34,21 +36,19 @@ class Plant {
 	{
 		return column;
 	}
+	
 }
 
-public class Main implements ActionListener {
+public class Main {
 	public static Timer globalTime = new Timer();
 	static ArrayList<Plant> shooterPlants = new ArrayList<Plant>();
 	static ArrayList<Plant> sunflowers = new ArrayList<Plant>();
+	static ArrayList<Plant> wallnuts = new ArrayList<Plant>();
 	public static ActionListener PEA_SHOOTER;
-	public static ActionListener SUNFLOWER;
-	public static ActionListener WALLNUT;
-	public static ActionListener DOUBLE_PEA_SHOOTER;
 	public static int plantSelected = 0;
 	public static int plantCount = 0;
 	static Board b;
 	static int sunCount = 50;
-	public static int sunflowerState = 1;
 	static JLabel StoredEnergy;
 
 	public static void main(String[] args) {
@@ -75,7 +75,7 @@ public class Main implements ActionListener {
 
 		mainGame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainGame.add(startScreen);
-		mainGame.setSize(1000,500);
+		mainGame.setSize(650,500);
 		mainGame.setVisible(true);
 		
 		StoredEnergy = new JLabel();
@@ -142,10 +142,9 @@ public class Main implements ActionListener {
 		});
 		
 		globalTime.scheduleAtFixedRate(peashooter, (long)1000, (long)500);
-		globalTime.scheduleAtFixedRate(sunflowerAnim, (long)1000, (long)5000);
+		globalTime.scheduleAtFixedRate(sunflowerAnim, (long)1000, (long)2500);
 
-		for(int i = 0;; i++) {
-			
+		for(;;) {
 			if(startScreen.menuVisible) {
 				startScreen.setVisible(true);
 				mainGame.repaint();
@@ -154,6 +153,7 @@ public class Main implements ActionListener {
 				StoredEnergy.setText("Stored Energy: " + sunCount);
 				b.setVisible(true);
 				startScreen.setVisible(false);
+				mainGame.repaint();
 
 				//adding the GUI
 				mainGame.add(b);
@@ -208,6 +208,9 @@ public class Main implements ActionListener {
 								Plant p = new Plant(plantCount, grow.getRow(), grow.getCol(), plantSelected);
 								sunCount -= 50;
 								StoredEnergy.setText("Stored Energy: " + sunCount);
+								wallnuts.add(p);
+								b.putPeg("orange", grow.getRow(), grow.getCol());
+								b.displayMessage("Planted a Wallnut at " + grow.getRow() + " " + grow.getCol());
 							}
 						}
 					}
@@ -217,39 +220,42 @@ public class Main implements ActionListener {
 	}
 
 	public static void animateShooterPlants(ArrayList<Plant> plants) {
-		//if zombies are on screen
 		for(int i=0;i<plants.size();i++) { 
 			Plant tempPlant = plants.get(i);
-			if(tempPlant.type == 2) { //PEA SHOOTER
-				if(tempPlant.getCol() < 9) {
-					b.removePeg(tempPlant.getRow(), tempPlant.getCol());
-					b.putPeg("green", tempPlant.originRow, tempPlant.originCol);
-					b.putPeg("red", tempPlant.getRow(),tempPlant.getCol() + 1);
-					tempPlant.row = tempPlant.row;
-					tempPlant.column = tempPlant.column + 1;
-				} else {
-					b.removePeg(tempPlant.getRow(), tempPlant.getCol());
-					tempPlant.row = tempPlant.getRow();
-					tempPlant.column = tempPlant.getCol();
-				}
-			} else { //DOUBLE PEA SHOOTER
-				if(tempPlant.getCol() < 8) {
-					b.putPeg("red", tempPlant.getRow(),tempPlant.getCol() + 1);
-					b.removePeg(tempPlant.getRow(), tempPlant.getCol());
-					b.removePeg(tempPlant.getRow(),tempPlant.getCol() + 1);
-					tempPlant.row = tempPlant.row;
-					tempPlant.column = tempPlant.column + 1;
-				} else if(tempPlant.getCol() < 9) {
-					b.putPeg("red", tempPlant.getRow(),tempPlant.getCol() + 1);
-					b.putPeg("red", tempPlant.getRow(),tempPlant.getCol() + 2);
-					b.removePeg(tempPlant.getRow(), tempPlant.getCol());
-					b.removePeg(tempPlant.getRow(),tempPlant.getCol() + 1);
-					tempPlant.row = tempPlant.row;
-					tempPlant.column = tempPlant.column + 1;
-				} else {
-					b.removePeg(tempPlant.getRow(), tempPlant.getCol());
-					tempPlant.row = tempPlant.originRow;
-					tempPlant.column = tempPlant.originCol;
+			if(killPlant(tempPlant)) {
+				plants.remove(tempPlant);
+			} else {
+				//if zombie in lane
+				if(tempPlant.type == 2) { //PEA SHOOTER
+					if(tempPlant.getCol() < 9) {
+						b.removePeg(tempPlant.getRow(), tempPlant.getCol());
+						b.putPeg("green", tempPlant.originRow, tempPlant.originCol);
+						b.putPeg("red", tempPlant.getRow(),tempPlant.getCol() + 1);
+						tempPlant.row = tempPlant.row;
+						tempPlant.column = tempPlant.column + 1;
+					} else {
+						b.removePeg(tempPlant.getRow(), tempPlant.getCol());
+						tempPlant.row = tempPlant.originRow;
+						tempPlant.column = tempPlant.originCol;
+					}
+				} else { //DOUBLE PEA SHOOTER
+					if(tempPlant.getCol() < 8) {
+						b.putPeg("green", tempPlant.originRow, tempPlant.originCol);
+						b.putPeg("red", tempPlant.getRow(),tempPlant.getCol() + 1);
+						b.putPeg("red", tempPlant.getRow(),tempPlant.getCol() + 2);
+						b.removePeg(tempPlant.getRow(), tempPlant.getCol());
+						tempPlant.row = tempPlant.row;
+						tempPlant.column = tempPlant.column + 1;
+					} else if(tempPlant.getCol() < 9) {
+						b.putPeg("red", tempPlant.getRow(),tempPlant.getCol() + 1);
+						b.removePeg(tempPlant.getRow(), tempPlant.getCol());
+						tempPlant.row = tempPlant.row;
+						tempPlant.column = tempPlant.column + 1;
+					} else {
+						b.removePeg(tempPlant.getRow(), tempPlant.getCol());
+						tempPlant.row = tempPlant.originRow;
+						tempPlant.column = tempPlant.originCol;
+					}
 				}
 			}
 		}
@@ -258,23 +264,46 @@ public class Main implements ActionListener {
 	public static void animateSunflowers(ArrayList<Plant> plants) {
 		for(int i=0;i<plants.size();i++) {
 			Plant tempPlant = plants.get(i);
-			b.removePeg(tempPlant.getRow(), tempPlant.getCol());
-			if(sunflowerState == 1) {
-				sunflowerState = 2;
-				sunCount += 25 * plants.size();
-				StoredEnergy.setText("Stored Energy: " + sunCount);
-				b.putPeg("black", tempPlant.getRow(),tempPlant.getCol());
+			if(killPlant(tempPlant)) {
+				plants.remove(tempPlant);
 			} else {
-				sunflowerState = 1;
-				b.putPeg("yellow", tempPlant.getRow(),tempPlant.getCol());
-			}
+				b.removePeg(tempPlant.getRow(), tempPlant.getCol());
+				if(tempPlant.plantState == 1) {
+					tempPlant.plantState = 2;
+					sunCount += 25;
+					StoredEnergy.setText("Stored Energy: " + sunCount);
+					b.putPeg("black", tempPlant.getRow(),tempPlant.getCol());
+				} else {
+					tempPlant.plantState = 1;
+					b.putPeg("yellow", tempPlant.getRow(),tempPlant.getCol());
+				}
 
+			}	
 		}
 	}
-
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		// TODO Auto-generated method stub
-
+	
+	public static void animateWallnut(ArrayList<Plant> plants) {
+		for(int i=0;i<plants.size();i++) {
+			Plant tempPlant = plants.get(i);
+			if(killPlant(tempPlant)) {
+				plants.remove(tempPlant);
+			} else {
+				if(tempPlant.hp < 7) {
+					b.removePeg(tempPlant.getRow(), tempPlant.getCol());
+					b.putPeg("cyan", tempPlant.getRow(), tempPlant.getCol());
+				} else if(tempPlant.hp < 3) {
+					b.removePeg(tempPlant.getRow(), tempPlant.getCol());
+					b.putPeg("pink", tempPlant.getRow(), tempPlant.getCol());
+				}
+			}
+		}
+	}
+	
+	public static boolean killPlant(Plant plant) {
+		if(plant.hp == 0) {
+			b.removePeg(plant.originRow, plant.originCol);
+			return true;
+		}
+		return false;
 	}
 }
