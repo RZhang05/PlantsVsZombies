@@ -1,3 +1,4 @@
+//imports
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -9,7 +10,9 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 
+//Plant class
 class Plant {
+	//basic points
 	public final int iden;
 	public int row;
 	public int column;
@@ -25,9 +28,10 @@ class Plant {
 		originCol = yIn;
 
 	}
+	//the basic attributes of a plant
 	public int hp = 10;
 	public boolean shotInterrupted = false;
-	public int plantState = 1;
+	public int plantState = 1; //used solely for sunflower
 	public int getRow()
 	{
 		return row;
@@ -36,23 +40,38 @@ class Plant {
 	{
 		return column;
 	}
+
+}
+
+//Zombie class
+class Zombie {
 	
 }
 
 public class Main {
+
+	//global variables
 	public static Timer globalTime = new Timer();
+
+	//the plants currently in play
 	static ArrayList<Plant> shooterPlants = new ArrayList<Plant>();
 	static ArrayList<Plant> sunflowers = new ArrayList<Plant>();
 	static ArrayList<Plant> wallnuts = new ArrayList<Plant>();
-	public static ActionListener PEA_SHOOTER;
+
+	//plant selected and 
 	public static int plantSelected = 0;
-	public static int plantCount = 0;
+	public static int plantCount = 0; //identity number
+
+	//The Board
 	static Board b;
+
+	//Currency
 	static int sunCount = 50;
 	static JLabel StoredEnergy;
 
 	public static void main(String[] args) {
 
+		//Timer Animation Tasks
 		TimerTask peashooter = new TimerTask() {
 			@Override
 			public void run() {
@@ -67,20 +86,32 @@ public class Main {
 			}
 		};
 
+		TimerTask wallnutChange = new TimerTask() {
+			@Override
+			public void run() {
+				animateWallnut(wallnuts);
+			}
+		};
+		
+		//the main layout
 		JFrame mainGame = new JFrame("Photosynthesis");
 		mainGame.setLayout(new FlowLayout());
 		b = new Board(5,10);
 
+		//create a new menu panel/ start screen
 		MenuPanel startScreen = new MenuPanel();
-
+		
+		//set the basic parameters
 		mainGame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainGame.add(startScreen);
 		mainGame.setSize(650,500);
 		mainGame.setVisible(true);
-		
+
+		//the amount of currency you have
 		StoredEnergy = new JLabel();
 		StoredEnergy.setText("Stored Energy: " + sunCount);
-
+		
+		//new buttons and their action listeners
 		JButton button1 = new JButton("Sunflower");
 		button1.setActionCommand("Sunflower");
 		button1.setVisible(true);
@@ -91,11 +122,12 @@ public class Main {
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				plantSelected = 1;
+				plantSelected = 1; //what type of plant is it
 				b.displayMessage("Selecting Sunflower...");
 			}
 		});
-
+		
+		//another button
 		JButton button2 = new JButton("Pea Shooter");
 		button2.setActionCommand("Pea Shooter");
 		button2.setVisible(true);
@@ -106,11 +138,12 @@ public class Main {
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				plantSelected = 2;
+				plantSelected = 2; //type of plant
 				b.displayMessage("Selecting Pea Shooter...");
 			}
 		});
-
+		
+		//another button
 		JButton button3 = new JButton("Wallnut");
 		button3.setActionCommand("Wallnut");
 		button3.setVisible(true);
@@ -126,6 +159,7 @@ public class Main {
 			}
 		});
 
+		//another button
 		JButton button4 = new JButton("Double Pea Shooter");
 		button4.setActionCommand("Double Pea");
 		button4.setVisible(true);
@@ -140,11 +174,12 @@ public class Main {
 				b.displayMessage("Selecting Double Pea Shooter...");
 			}
 		});
-		
+
+		//timer animation events
 		globalTime.scheduleAtFixedRate(peashooter, (long)1000, (long)500);
 		globalTime.scheduleAtFixedRate(sunflowerAnim, (long)1000, (long)2500);
 
-		for(;;) {
+		for(;;) { //run this infinitely
 			if(startScreen.menuVisible) {
 				startScreen.setVisible(true);
 				mainGame.repaint();
@@ -162,15 +197,17 @@ public class Main {
 				mainGame.add(button3);
 				mainGame.add(button4);
 				mainGame.add(StoredEnergy);
-
+				
+				//if you click anywhere on the board
 				Coordinate grow = b.getClick();
 
 				if(plantSelected > 0) {
-					if(grow.getCol() > 5) {
+					if(grow.getCol() > 5) { //checking if you're planting on grass
 						b.displayMessage("You can only plant on grass!");
 					} else {
 						if(plantSelected == 2) {
 							if(sunCount < 100) {
+								//not enough currency
 								b.displayMessage("Need 100 Stored Energy");
 							} else {
 								Plant p = new Plant(plantCount, grow.getRow(), grow.getCol(), plantSelected);
@@ -220,6 +257,7 @@ public class Main {
 	}
 
 	public static void animateShooterPlants(ArrayList<Plant> plants) {
+		//for each pea shooter
 		for(int i=0;i<plants.size();i++) { 
 			Plant tempPlant = plants.get(i);
 			if(killPlant(tempPlant)) {
@@ -228,6 +266,7 @@ public class Main {
 				//if zombie in lane
 				if(tempPlant.type == 2) { //PEA SHOOTER
 					if(tempPlant.getCol() < 9) {
+						//animation
 						b.removePeg(tempPlant.getRow(), tempPlant.getCol());
 						b.putPeg("green", tempPlant.originRow, tempPlant.originCol);
 						b.putPeg("red", tempPlant.getRow(),tempPlant.getCol() + 1);
@@ -240,10 +279,11 @@ public class Main {
 					}
 				} else { //DOUBLE PEA SHOOTER
 					if(tempPlant.getCol() < 8) {
+						//animation
+						b.removePeg(tempPlant.getRow(), tempPlant.getCol());
 						b.putPeg("green", tempPlant.originRow, tempPlant.originCol);
 						b.putPeg("red", tempPlant.getRow(),tempPlant.getCol() + 1);
 						b.putPeg("red", tempPlant.getRow(),tempPlant.getCol() + 2);
-						b.removePeg(tempPlant.getRow(), tempPlant.getCol());
 						tempPlant.row = tempPlant.row;
 						tempPlant.column = tempPlant.column + 1;
 					} else if(tempPlant.getCol() < 9) {
@@ -281,7 +321,7 @@ public class Main {
 			}	
 		}
 	}
-	
+
 	public static void animateWallnut(ArrayList<Plant> plants) {
 		for(int i=0;i<plants.size();i++) {
 			Plant tempPlant = plants.get(i);
@@ -298,7 +338,7 @@ public class Main {
 			}
 		}
 	}
-	
+
 	public static boolean killPlant(Plant plant) {
 		if(plant.hp == 0) {
 			b.removePeg(plant.originRow, plant.originCol);
