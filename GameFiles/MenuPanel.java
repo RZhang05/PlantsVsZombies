@@ -1,9 +1,12 @@
 
+import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
@@ -21,29 +24,37 @@ class MenuPanel extends JPanel implements ActionListener {
 			System.out.println("Failed to run due to: " + exc);
 		}
 	}
+	
+	public static JLabel background;
 
 	private void makeGUI() {
-		setLayout(new FlowLayout());
+		setLayout(new BorderLayout());
+		
+		background = new JLabel(new ImageIcon("/Users/A.RZ/Desktop/pvz.png"));
+		add(background);
+		
+		background.setLayout(new FlowLayout());
 
 		JButton button1 = new JButton("Instructions");
 		button1.setActionCommand("Instructions");
 		button1.addActionListener(this);
-		add(button1);
+		background.add(button1);
 
 		JButton button2 = new JButton("High Scores");
 		button2.setActionCommand("Scores");
 		button2.addActionListener(this);
-		add(button2);
+		background.add(button2);
 
 		JButton button3 = new JButton("Play Game");
 		button3.setActionCommand("Play");
 		button3.addActionListener(this);
-		add(button3);
+		background.add(button3);
 
 	}
 
 	public void actionPerformed(ActionEvent ae) {
 		if(ae.getActionCommand().equalsIgnoreCase("Play")){
+			background.setVisible(false);
 			this.setVisible(false);
 			menuVisible = false;
 		}
