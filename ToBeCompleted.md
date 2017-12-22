@@ -1,8 +1,9 @@
 # Raymond To-Do List
 - [x] Finish Plants Class
-- [ ] Finish Plant Buttons
-- [ ] Finish Plant Button Implementation
+- [x] Finish Plant Buttons
+- [x] Finish Plant Button Implementation
 - [ ] Finish Plants
+- [ ] Position Plant Elements properly
 
 # Vincent To-Do List
 - [ ] Finish Zombie Class
@@ -11,9 +12,8 @@
 
 # Collective To-Do List
 - [x] Finish Timer Object
-- [ ] Finish Game Board outline
+- [x] Finish Game Board outline
 - [ ] Finish GUI
 - [ ] Finalize Game Design 
-- [ ] Finish GUI
 - [ ] Testing Stage
 - [ ] Fix Bugs list in Issues
