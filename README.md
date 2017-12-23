@@ -25,6 +25,6 @@ User will submit input through `key clicks` and GUI buttons.
 
 #### Progress
 View examples below:
-* [Base Game](https://gyazo.com/e4935416f9526b209667cea828cd65b5)
+* [Base Game](https://gyazo.com/b38c1aa6f48a955747095ac5502c5e44)
 * [Menu Screen](https://gyazo.com/89353700e7c31526bfa3bc187d1946a7)
 
