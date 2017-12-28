@@ -2,10 +2,14 @@
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -45,7 +49,23 @@ class Plant {
 
 //Zombie class
 class Zombie {
-	
+	public int row;
+	public int col = 9;
+	public int type;
+	public int hp;
+	public Zombie(int xIn, int typeOfZombie) {
+		row = xIn;
+		type = typeOfZombie;
+		hp = type * 10;
+	}
+	public int getRow()
+	{
+		return row;
+	}
+	public int getCol()
+	{
+		return col;
+	}
 }
 
 public class Main {
@@ -57,6 +77,7 @@ public class Main {
 	static ArrayList<Plant> shooterPlants = new ArrayList<Plant>();
 	static ArrayList<Plant> sunflowers = new ArrayList<Plant>();
 	static ArrayList<Plant> wallnuts = new ArrayList<Plant>();
+	static ArrayList<Zombie> zombies = new ArrayList<Zombie>();
 
 	//plant selected and 
 	public static int plantSelected = 0;
@@ -68,6 +89,16 @@ public class Main {
 	//Currency
 	static int sunCount = 50;
 	static JLabel StoredEnergy;
+
+	//Waves and Timer
+	static int gameTime = 0;
+	static JLabel gameTimer;
+	static int wave = 1;
+	static int minutes;
+	static int seconds;
+
+	//Game Start Flag
+	static boolean plantDown = false;
 
 	public static void main(String[] args) {
 
@@ -93,6 +124,28 @@ public class Main {
 			}
 		};
 		
+		TimerTask animZombies = new TimerTask() {
+			@Override
+			public void run() {
+				animateZombies(zombies);
+			}
+		};
+
+		TimerTask spawn = new TimerTask() {
+			@Override
+			public void run() {
+				if(plantDown)
+					spawnZombies();
+			}
+		};
+
+		TimerTask updateClock = new TimerTask() {
+			@Override
+			public void run() {
+				incrementClock();
+			}
+		};
+
 		//the main layout
 		JFrame mainGame = new JFrame("Plants vs. Zombies");
 		mainGame.setLayout(new FlowLayout());
@@ -100,7 +153,7 @@ public class Main {
 
 		//create a new menu panel/ start screen
 		MenuPanel startScreen = new MenuPanel();
-		
+
 		//set the basic parameters
 		mainGame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainGame.add(startScreen);
@@ -110,7 +163,17 @@ public class Main {
 		//the amount of currency you have
 		StoredEnergy = new JLabel();
 		StoredEnergy.setText("Stored Energy: " + sunCount);
-		
+
+		//the Timer for the level
+		gameTimer = new JLabel();
+		minutes = gameTime / 60;
+		seconds = gameTime - (minutes * 60);
+		if(seconds < 10) {
+			gameTimer.setText("Time: " + minutes + ":0" + seconds);
+		} else {
+			gameTimer.setText("Time: " + minutes + ":" + seconds);
+		}
+
 		//new buttons and their action listeners
 		JButton button1 = new JButton("Sunflower");
 		button1.setActionCommand("Sunflower");
@@ -126,7 +189,7 @@ public class Main {
 				b.displayMessage("Selecting Sunflower...");
 			}
 		});
-		
+
 		//another button
 		JButton button2 = new JButton("Pea Shooter");
 		button2.setActionCommand("Pea Shooter");
@@ -142,7 +205,7 @@ public class Main {
 				b.displayMessage("Selecting Pea Shooter...");
 			}
 		});
-		
+
 		//another button
 		JButton button3 = new JButton("Wallnut");
 		button3.setActionCommand("Wallnut");
@@ -179,6 +242,10 @@ public class Main {
 		globalTime.scheduleAtFixedRate(peashooter, (long)1000, (long)250);
 		globalTime.scheduleAtFixedRate(sunflowerAnim, (long)1000, (long)2500);
 		globalTime.scheduleAtFixedRate(wallnutChange, (long)1000, (long)400);
+		globalTime.scheduleAtFixedRate(animZombies, (long)20000, (long)2000);
+		globalTime.scheduleAtFixedRate(spawn, (long)21000, (long)5000/((minutes * 2) + 1));
+		globalTime.scheduleAtFixedRate(updateClock, (long)1000, (long)1000);
+
 
 		for(;;) { //run this infinitely
 			if(startScreen.menuVisible) {
@@ -198,14 +265,16 @@ public class Main {
 				mainGame.add(button3);
 				mainGame.add(button4);
 				mainGame.add(StoredEnergy);
-				
+				mainGame.add(gameTimer);
+
 				//if you click anywhere on the board
 				Coordinate grow = b.getClick();
 
 				if(plantSelected > 0) {
-					if(grow.getCol() > 5) { //checking if you're planting on grass
+					if(grow.getCol() > 4) { //checking if you're planting on grass
 						b.displayMessage("You can only plant on grass!");
 					} else {
+						plantDown = true;
 						if(plantSelected == 2) {
 							if(sunCount < 100) {
 								//not enough currency
@@ -256,7 +325,7 @@ public class Main {
 			}
 		}	
 	}
-	
+
 	/**
 	 * Animates the shooting plants
 	 * pre: plants > 0
@@ -269,44 +338,83 @@ public class Main {
 			if(killPlant(tempPlant)) {
 				plants.remove(tempPlant);
 			} else {
+				boolean zombieInLane = false;
+				ArrayList<Zombie> zomb = new ArrayList<Zombie>();
 				//if zombie in lane
-				if(tempPlant.type == 2) { //PEA SHOOTER
-					if(tempPlant.getCol() < 9) {
-						//animation
-						b.removePeg(tempPlant.getRow(), tempPlant.getCol());
-						b.putPeg("peashooter", tempPlant.originRow, tempPlant.originCol);
-						b.putPeg("pea", tempPlant.getRow(),tempPlant.getCol() + 1);
-						tempPlant.row = tempPlant.row;
-						tempPlant.column = tempPlant.column + 1;
-					} else {
-						b.removePeg(tempPlant.getRow(), tempPlant.getCol());
-						tempPlant.row = tempPlant.originRow;
-						tempPlant.column = tempPlant.originCol;
+				for(int j=0;j<zombies.size();j++) {
+					Zombie curZombie = zombies.get(i);
+					if(curZombie.getRow() == tempPlant.getRow()) {
+						zombieInLane = true;
+						zomb.add(curZombie);
 					}
-				} else { //DOUBLE PEA SHOOTER
-					if(tempPlant.getCol() < 8) {
-						//animation
-						b.removePeg(tempPlant.getRow(), tempPlant.getCol());
-						b.putPeg("peashooter", tempPlant.originRow, tempPlant.originCol);
-						b.putPeg("pea", tempPlant.getRow(),tempPlant.getCol() + 1);
-						b.putPeg("pea", tempPlant.getRow(),tempPlant.getCol() + 2);
-						tempPlant.row = tempPlant.row;
-						tempPlant.column = tempPlant.column + 1;
-					} else if(tempPlant.getCol() < 9) {
-						b.putPeg("pea", tempPlant.getRow(),tempPlant.getCol() + 1);
-						b.removePeg(tempPlant.getRow(), tempPlant.getCol());
-						tempPlant.row = tempPlant.row;
-						tempPlant.column = tempPlant.column + 1;
-					} else {
-						try {
-							Thread.sleep(1000);
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+				}
+				if(zombieInLane) {
+					if(tempPlant.type == 2) { //PEA SHOOTER
+						if(tempPlant.getCol() < 9) {
+							//animation
+							b.removePeg(tempPlant.getRow(), tempPlant.getCol());
+							b.putPeg("peashooter", tempPlant.originRow, tempPlant.originCol);
+							b.putPeg("pea", tempPlant.getRow(),tempPlant.getCol() + 1);
+							
+							int smallest = Integer.MAX_VALUE;
+							//create a default zombie
+							Zombie thisZomb = new Zombie(0,0);
+							for(int j=0;j<zomb.size();j++) {
+								Zombie curZombie = zomb.get(j);
+								if(curZombie.getCol() < smallest) {
+									smallest = curZombie.getCol();
+									thisZomb = curZombie;
+								}
+							}
+							tempPlant.column = tempPlant.column + 1;
+							if(tempPlant.getCol() == smallest) {
+								b.removePeg(tempPlant.getRow(), tempPlant.getCol());
+								tempPlant.column = 9;
+								thisZomb.hp -= 2;
+							}
+						} else {
+							b.removePeg(tempPlant.getRow(), tempPlant.getCol());
+							tempPlant.row = tempPlant.originRow;
+							tempPlant.column = tempPlant.originCol;
 						}
-						b.removePeg(tempPlant.getRow(), tempPlant.getCol());
-						tempPlant.row = tempPlant.originRow;
-						tempPlant.column = tempPlant.originCol;
+					} else { //DOUBLE PEA SHOOTER
+						if(tempPlant.getCol() < 8) {
+							//animation
+							b.removePeg(tempPlant.getRow(), tempPlant.getCol());
+							b.putPeg("peashooter", tempPlant.originRow, tempPlant.originCol);
+							b.putPeg("pea", tempPlant.getRow(),tempPlant.getCol() + 1);
+							b.putPeg("pea", tempPlant.getRow(),tempPlant.getCol() + 2);
+							int smallest = Integer.MAX_VALUE;
+							Zombie thisZomb = new Zombie(0,0);
+							for(int j=0;j<zomb.size();j++) {
+								Zombie curZombie = zomb.get(j);
+								if(curZombie.getCol() < smallest) {
+									smallest = curZombie.getCol();
+									thisZomb.hp -= 2;
+								}
+							}
+							tempPlant.column = tempPlant.column + 1;
+							if(tempPlant.getCol() == smallest) {
+								b.removePeg(tempPlant.getRow(), tempPlant.getCol());
+								tempPlant.column = 9;
+							}
+							tempPlant.column = tempPlant.column + 1;
+						} else if(tempPlant.getCol() < 9) {
+							b.putPeg("pea", tempPlant.getRow(),tempPlant.getCol() + 1);
+							b.removePeg(tempPlant.getRow(), tempPlant.getCol());
+							tempPlant.row = tempPlant.row;
+							tempPlant.column = tempPlant.column + 1;
+						} else {
+							try {
+								Thread.sleep(1000);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							b.removePeg(tempPlant.getRow(), tempPlant.getCol());
+							tempPlant.row = tempPlant.originRow;
+							tempPlant.column = tempPlant.originCol;
+						}
 					}
 				}
 			}
@@ -338,7 +446,7 @@ public class Main {
 			}	
 		}
 	}
-	
+
 	/**
 	 * "Animates" the wallnut
 	 * pre: plants > 0
@@ -362,7 +470,7 @@ public class Main {
 			}
 		}
 	}
-	
+
 	/**
 	 * Removes plants off board
 	 * pre: plant.hp < 0
@@ -375,4 +483,63 @@ public class Main {
 		}
 		return false;
 	}
+
+	/**
+	 * Spawns zombies onto the board
+	 * pre: none
+	 * post: zombie peg down
+	 */
+	public static void spawnZombies() {
+		Random r = new Random();
+		int randomLane = r.nextInt(5);
+		//check difficulty
+		b.putPeg("zombie", randomLane, 9);
+		Zombie curZombie = new Zombie(randomLane, 1);
+		zombies.add(curZombie);
+	}
+
+	/**
+	 * Moving Zombie Peg
+	 * pre: zombies > 0
+	 * post: zombie pegs moving left
+	 */ 
+	public static void animateZombies(ArrayList<Zombie> zombies) {
+		for(int i=0;i<zombies.size();i++) {
+			Zombie curZombie = zombies.get(i);
+			if(curZombie.getCol() <= 0) {
+				
+			}
+			b.removePeg(curZombie.getRow(), curZombie.getCol());
+			b.putPeg("zombie", curZombie.getRow(), curZombie.getCol() - 1);
+			curZombie.col -= 1;
+			if(curZombie.hp <= 0) {
+				zombies.remove(i);
+				b.removePeg(curZombie.getRow(), curZombie.getCol());
+			}
+		}
+	}
+
+	/**
+	 * Update Click
+	 * pre: Game started
+	 * post: Timer Increase
+	 */
+	public static void incrementClock() {
+		gameTime += 1;
+		minutes = gameTime / 60;
+		if(minutes == 1) {
+			wave = 1;
+		} else if(minutes == 2) {
+			wave = 2;
+		} else if(minutes == 3) {
+			wave = 3;
+		}
+		seconds = gameTime - (minutes * 60);
+		if(seconds < 10) {
+			gameTimer.setText("Time: " + minutes + ":0" + seconds);
+		} else {
+			gameTimer.setText("Time: " + minutes + ":" + seconds);
+		}
+	}
+
 }
