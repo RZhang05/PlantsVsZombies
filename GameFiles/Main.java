@@ -79,9 +79,11 @@ public class Main {
 	static ArrayList<Plant> wallnuts = new ArrayList<Plant>();
 	static ArrayList<Zombie> zombies = new ArrayList<Zombie>();
 
-	//plant selected and 
+	//plants
 	public static int plantSelected = 0;
 	public static int plantCount = 0; //identity number
+	public static int deadPlant = 0; //the index value of the dead plant in arrayList
+	
 
 	//The Board
 	static Board b;
@@ -493,8 +495,10 @@ public class Main {
 		Random r = new Random();
 		int randomLane = r.nextInt(5);
 		//check difficulty
-		b.putPeg("zombie", randomLane, 9);
-		Zombie curZombie = new Zombie(randomLane, 1);
+		// b.putPeg("zombie", randomLane, 9);
+		// Zombie curZombie = new Zombie(randomLane, 1);
+		b.putPeg("zombie", 2, 9);
+		Zombie curZombie = new Zombie(2, 1);
 		zombies.add(curZombie);
 	}
 
@@ -506,17 +510,69 @@ public class Main {
 	public static void animateZombies(ArrayList<Zombie> zombies) {
 		for(int i=0;i<zombies.size();i++) {
 			Zombie curZombie = zombies.get(i);
+			//zombie has gotten into house
 			if(curZombie.getCol() <= 0) {
 				
 			}
-			b.removePeg(curZombie.getRow(), curZombie.getCol());
-			b.putPeg("zombie", curZombie.getRow(), curZombie.getCol() - 1);
-			curZombie.col -= 1;
-			if(curZombie.hp <= 0) {
-				zombies.remove(i);
+			//plant is under attack
+			Plant curPlant = closestPlant(curZombie);
+			if(curZombie.getCol() == curPlant.getCol() + 1) {
+				curPlant.hp -= 2;
+				//check if plant is dead
+				boolean plantKilled = killPlant(curPlant);
+				if(curPlant.type == 1 && plantKilled) {
+					sunflowers.remove(deadPlant);
+				} else if((curPlant.type == 2 || curPlant.type == 4) && plantKilled) {
+					shooterPlants.remove(deadPlant);
+				} else if(plantKilled){
+					wallnuts.remove(deadPlant);
+				}
+			} else {
 				b.removePeg(curZombie.getRow(), curZombie.getCol());
+				b.putPeg("zombie", curZombie.getRow(), curZombie.getCol() - 1);
+				curZombie.col -= 1;
+				if(curZombie.hp <= 0) {
+					zombies.remove(i);
+					b.removePeg(curZombie.getRow(), curZombie.getCol());
+				}
 			}
 		}
+	}
+	
+	/**
+	 * Check for the plant closest to the zombie in an array
+	 * pre: Number of Plants > 0
+	 * post: Plant with the largest row value
+	 */
+	public static Plant closestPlant(Zombie curZombie) {
+		//default plant
+		Plant thisPlant = new Plant(0,0,0,0);
+		int largest = 0;
+		for(int j=0;j<shooterPlants.size();j++) {
+			Plant curPlant = shooterPlants.get(j);
+			if(curPlant.getRow() == curZombie.getRow() && curPlant.getCol() > largest) {
+				largest = curPlant.getCol();
+				thisPlant = curPlant;
+				deadPlant = j;
+			}
+		}
+		for(int j=0;j<sunflowers.size();j++) {
+			Plant curPlant = sunflowers.get(j);
+			if(curPlant.getRow() == curZombie.getRow() && curPlant.getCol() > largest) {
+				largest = curPlant.getCol();
+				thisPlant = curPlant;
+				deadPlant = j;
+			}
+		}
+		for(int j=0;j< wallnuts.size();j++) {
+			Plant curPlant = wallnuts.get(j);
+			if(curPlant.getRow() == curZombie.getRow() && curPlant.getCol() > largest) {
+				largest = curPlant.getCol();
+				thisPlant = curPlant;
+				deadPlant = j;
+			}
+		}
+		return thisPlant;
 	}
 
 	/**
