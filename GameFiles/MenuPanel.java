@@ -1,5 +1,6 @@
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -30,13 +31,15 @@ class MenuPanel extends JPanel implements ActionListener {
 	private void makeGUI() {
 		setLayout(new BorderLayout());
 		
-		background = new JLabel(new ImageIcon("/Users/A.RZ/Desktop/pvz.png"));
+		background = new JLabel(new ImageIcon("pvz.png"));
 		add(background);
 		
 		background.setLayout(new FlowLayout());
 
 		JButton button1 = new JButton("Instructions");
 		button1.setActionCommand("Instructions");
+		button1.setBackground(new Color(154, 145, 129));
+        button1.setFocusPainted(false);
 		button1.addActionListener(this);
 		background.add(button1);
 
@@ -47,6 +50,8 @@ class MenuPanel extends JPanel implements ActionListener {
 
 		JButton button3 = new JButton("Play Game");
 		button3.setActionCommand("Play");
+		button3.setBackground(new Color(154, 145, 129));
+        button3.setFocusPainted(false);
 		button3.addActionListener(this);
 		background.add(button3);
 

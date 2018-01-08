@@ -69,6 +69,7 @@ public class Main {
 
 	//global variables
 	public static Timer globalTime = new Timer();
+	public static boolean gameLost = false;
 
 	//the plants currently in play
 	static ArrayList<Plant> shooterPlants = new ArrayList<Plant>();
@@ -96,8 +97,11 @@ public class Main {
 	static int minutes;
 	static int seconds;
 
-	//Game Start Flag
+	//Game Start Flag Var
 	static boolean plantDown = false;
+	
+	//Game End Flag
+	static boolean isRunning = false;
 
 	public static void main(String[] args) {
 
@@ -142,6 +146,13 @@ public class Main {
 			@Override
 			public void run() {
 				incrementClock();
+			}
+		};
+		
+		TimerTask keepZombies = new TimerTask() {
+			@Override
+			public void run() {
+				keepZombieSprites();
 			}
 		};
 
@@ -236,17 +247,26 @@ public class Main {
 				b.displayMessage("Selecting Double Pea Shooter...");
 			}
 		});
+		
+		//timer events keeping character sprites in place
+		globalTime.scheduleAtFixedRate(keepZombies, (long)1000, (long)250);
 
 		//timer animation events
 		globalTime.scheduleAtFixedRate(peashooter, (long)1000, (long)250);
 		globalTime.scheduleAtFixedRate(sunflowerAnim, (long)1000, (long)2500);
 		globalTime.scheduleAtFixedRate(wallnutChange, (long)1000, (long)400);
 		globalTime.scheduleAtFixedRate(animZombies, (long)20000, (long)2000);
-		globalTime.scheduleAtFixedRate(spawn, (long)21000, (long)5000/((minutes * 2) + 1));
 		globalTime.scheduleAtFixedRate(updateClock, (long)1000, (long)1000);
 
 
-		for(;;) { //run this infinitely
+		while(isRunning) { //run this while the game is happening
+			
+			//if a sunflower was planted
+			if(plantDown && shooterPlants.size() < 1) {
+				globalTime.scheduleAtFixedRate(spawn, (long)21000 + seconds * 1000, (long)5000/((minutes * 2) + 1));
+			}
+			
+			
 			if(startScreen.menuVisible) {
 				startScreen.setVisible(true);
 				mainGame.repaint();
@@ -509,7 +529,7 @@ public class Main {
 			Zombie curZombie = zombies.get(i);
 			//zombie has gotten into house
 			if(curZombie.getCol() <= 0) {
-				
+				isRunning = false;
 			}
 			//plant is under attack
 			Plant curPlant = closestPlant(curZombie);
@@ -593,6 +613,28 @@ public class Main {
 		} else {
 			gameTimer.setText("Time: " + minutes + ":" + seconds);
 		}
+	}
+	
+	/**
+	 * Keep Zombie Sprites on screen
+	 * pre: Zombie ArrayList > 0
+	 * post: Zombie sprite
+	 */
+	
+	public static void keepZombieSprites() {
+		for(int i=0;i<zombies.size();i++) {
+			Zombie curZombie = zombies.get(i);
+			b.removePeg(curZombie.getRow(), curZombie.getCol());
+			b.putPeg("zombie", curZombie.getRow(), curZombie.getCol());
+		}
+	}
+	
+	public static void pause() {
+		try {
+			Thread.sleep(1);
+		} catch (InterruptedException e) {
+			
+		};
 	}
 
 }

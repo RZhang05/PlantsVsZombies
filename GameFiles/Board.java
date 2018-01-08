@@ -1,7 +1,15 @@
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.event.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.event.MouseEvent;
+
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.event.MouseInputAdapter;
 
 /**  Board GUI for implementation with various games
  *   Author: Kirill Levin, Troy Vasiga, Chris Ingram
@@ -22,19 +30,16 @@ public class Board extends JPanel
 	private static final Color GRID_COLOR_B = new Color(0,92,9);
 	private static final Color GRID_COLOR_C = new Color(87,59,12);
 
-	// Preset colours for pieces
-	private static final Color[] COLOURS = 
-		{Color.YELLOW, Color.BLUE, Color.CYAN, Color.GREEN, 
-				Color.PINK, Color.WHITE, Color.RED, Color.ORANGE };
-
+	private static final ImageIcon[] ICONS = 
+		{new ImageIcon("sunflower.png"), new ImageIcon("peashooter.png"), new ImageIcon("wallnut.png"), new ImageIcon("doublepea.png"),new ImageIcon("sunfloweranim.png"), new ImageIcon("pea.png"), new ImageIcon("zombie.png")};
 	// String used to indicate each colour
-	private static final String[] COLOUR_NAMES = 
-		{"yellow", "blue", "cyan", "green", "pink", "white", "red", "orange"};
+	private static final String[] ICON_NAMES = 
+		{"sunflower", "peashooter", "wallnut", "doublepea", "sunfloweranim", "pea", "zombie","wallnutdmg", "wallnutalmostdead"};
 
 	// Colour to use if a match is not found
 	private static final Color DEFAULT_COLOUR = Color.BLACK;
 
-	private Color[][] grid;
+	private ImageIcon[][] grid;
 	private Coordinate lastClick;  // How the mouse handling thread communicates 
 	// to the board where the last click occurred
 	private String message = "";
@@ -63,7 +68,7 @@ public class Board extends JPanel
 
 		//f.setResizable(true);
 
-		this.grid = new Color[cols][rows];
+		this.grid = new ImageIcon[cols][rows];
 
 		this.addMouseListener(
 				new MouseInputAdapter() 
@@ -147,11 +152,12 @@ public class Board extends JPanel
 				int deltaY = nextY-curY;
 
 				g.fillRect( curX, curY, deltaX, deltaY );
-				Color curColour = this.grid[i][j];
-				if (curColour != null) // Draw pegs if they exist
+				ImageIcon curImage = this.grid[i][j];
+				if (curImage != null) // Draw pegs if they exist
 				{
-					g.setColor(curColour);
-					g.fillOval(curX+deltaX/4, curY+deltaY/4, deltaX/2, deltaY/2);
+					curImage.paintIcon(this, g, curX, curY);
+					// g.setColor(curColour);
+					// g.fillOval(curX+deltaX/4, curY+deltaY/4, deltaX/2, deltaY/2);
 				}
 			}
 		}
@@ -180,15 +186,15 @@ public class Board extends JPanel
 	 * Convert a String to the corresponding Color defaulting to Black 
 	 * with an invald input
 	 */
-	private Color convertColour( String theColour )
+	private ImageIcon convertImageIcon( String theColour )
 	{
-		for( int i=0; i<COLOUR_NAMES.length; i++ )
+		for( int i=0; i<ICON_NAMES.length; i++ )
 		{
-			if( COLOUR_NAMES[i].equalsIgnoreCase( theColour ) )
-				return COLOURS[i];
+			if( ICON_NAMES[i].equalsIgnoreCase( theColour ) )
+				return ICONS[i];
 		}
 
-		return DEFAULT_COLOUR;
+		return ICONS[0];
 	}
 
 
@@ -224,8 +230,8 @@ public class Board extends JPanel
 	 * Otherwise the colour black will be used. 
 	 */
 	public void putPeg(String theColour, int row, int col)
-	{
-		this.grid[col][row] = this.convertColour( theColour );
+	{	
+		this.grid[col][row] = this.convertImageIcon( theColour );
 		this.repaint();
 	}
 
