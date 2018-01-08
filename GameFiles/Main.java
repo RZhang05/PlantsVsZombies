@@ -31,7 +31,6 @@ class Plant {
 	}
 	//the basic attributes of a plant
 	public int hp = 10;
-	public boolean shotInterrupted = false;
 	public int plantState = 1; //used solely for sunflower
 	public int getRow()
 	{
@@ -80,8 +79,6 @@ public class Main {
 	//plants
 	public static int plantSelected = 0;
 	public static int plantCount = 0; //identity number
-	public static int deadPlant = 0; //the index value of the dead plant in arrayList
-	
 
 	//The Board
 	static Board b;
@@ -265,7 +262,7 @@ public class Main {
 			//if a sunflower was planted
 			if(plantDown && !spawnStarted) {
 				spawnStarted = true;
-				globalTime.scheduleAtFixedRate(spawn, (long)21000 + seconds * 1000, (long)5000/((minutes * 2) + 1));
+				globalTime.scheduleAtFixedRate(spawn, (long)21000 + (seconds * 1000), (long)5000/((minutes * 2) + 1));
 			}
 			
 			
@@ -337,6 +334,7 @@ public class Main {
 								sunCount -= 75;
 								StoredEnergy.setText("Stored Energy: " + sunCount);
 								wallnuts.add(p);
+								p.hp = 20;
 								b.putPeg("wallnut", grow.getRow(), grow.getCol());
 								b.displayMessage("Planted a Wallnut at " + grow.getRow() + " " + grow.getCol());
 							}
@@ -357,19 +355,33 @@ public class Main {
 		for(int i=0;i<plants.size();i++) { 
 			Plant tempPlant = plants.get(i);
 			if(killPlant(tempPlant)) {
+				b.removePeg(tempPlant.originCol, tempPlant.originRow);
 				plants.remove(tempPlant);
 			} else {
+				//if a zombie is in the lane
 				boolean zombieInLane = false;
-				ArrayList<Zombie> zomb = new ArrayList<Zombie>();
+			
+				int smallest = Integer.MAX_VALUE;
+				//the index of the closed zombie to the plant
+				int index = 0;
+				//create a default zombie
+				Zombie thisZomb = new Zombie(0,0);
 				//if zombie in lane
 				for(int j=0;j<zombies.size();j++) {
 					Zombie curZombie = zombies.get(i);
-					if(curZombie.getRow() == tempPlant.getRow()) {
+					//check for comparison 
+					System.out.println("Comparing " + tempPlant.originRow + " to " + curZombie.getRow());
+					if(curZombie.getRow() == tempPlant.originRow) {
 						zombieInLane = true;
-						zomb.add(curZombie);
+						if(curZombie.getCol() < smallest) {
+							smallest = curZombie.getCol();
+							thisZomb = curZombie;
+						}
 					}
 				}
 				if(zombieInLane) {
+					// Testing for zombie in lane
+					System.out.println("Shooting at Zombie");
 					if(tempPlant.type == 2) { //PEA SHOOTER
 						if(tempPlant.getCol() < 9) {
 							//animation
@@ -377,21 +389,19 @@ public class Main {
 							b.putPeg("peashooter", tempPlant.originRow, tempPlant.originCol);
 							b.putPeg("pea", tempPlant.getRow(),tempPlant.getCol() + 1);
 							
-							int smallest = Integer.MAX_VALUE;
-							//create a default zombie
-							Zombie thisZomb = new Zombie(0,0);
-							for(int j=0;j<zomb.size();j++) {
-								Zombie curZombie = zomb.get(j);
-								if(curZombie.getCol() < smallest) {
-									smallest = curZombie.getCol();
-									thisZomb = curZombie;
-								}
-							}
 							tempPlant.column = tempPlant.column + 1;
 							if(tempPlant.getCol() == smallest) {
 								b.removePeg(tempPlant.getRow(), tempPlant.getCol());
 								tempPlant.column = 9;
 								thisZomb.hp -= 2;
+								if(thisZomb.hp <= 0) {
+									//testing for which zombie is dying
+									System.out.println(zombies.get(index).getRow());
+									zombies.remove(index);
+									
+									b.removePeg(thisZomb.getRow(), thisZomb.getCol());
+									try{Thread.sleep(1);}catch(InterruptedException e){};
+								}
 							}
 						} else {
 							b.removePeg(tempPlant.getRow(), tempPlant.getCol());
@@ -405,19 +415,16 @@ public class Main {
 							b.putPeg("peashooter", tempPlant.originRow, tempPlant.originCol);
 							b.putPeg("pea", tempPlant.getRow(),tempPlant.getCol() + 1);
 							b.putPeg("pea", tempPlant.getRow(),tempPlant.getCol() + 2);
-							int smallest = Integer.MAX_VALUE;
-							Zombie thisZomb = new Zombie(0,0);
-							for(int j=0;j<zomb.size();j++) {
-								Zombie curZombie = zomb.get(j);
-								if(curZombie.getCol() < smallest) {
-									smallest = curZombie.getCol();
-									thisZomb.hp -= 2;
-								}
-							}
+							
 							tempPlant.column = tempPlant.column + 1;
 							if(tempPlant.getCol() == smallest) {
 								b.removePeg(tempPlant.getRow(), tempPlant.getCol());
 								tempPlant.column = 9;
+								if(thisZomb.hp <= 0) {
+									zombies.remove(index);
+									b.removePeg(thisZomb.getRow(), thisZomb.getCol());
+									try{Thread.sleep(1);}catch(InterruptedException e){};
+								}
 							}
 							tempPlant.column = tempPlant.column + 1;
 						} else if(tempPlant.getCol() < 9) {
@@ -514,10 +521,8 @@ public class Main {
 		Random r = new Random();
 		int randomLane = r.nextInt(5);
 		//check difficulty
-		// b.putPeg("zombie", randomLane, 9);
-		// Zombie curZombie = new Zombie(randomLane, 1);
-		b.putPeg("zombie", 2, 9);
-		Zombie curZombie = new Zombie(2, 1);
+		b.putPeg("zombie", randomLane, 9);
+		Zombie curZombie = new Zombie(randomLane, 1);
 		zombies.add(curZombie);
 	}
 
@@ -537,23 +542,10 @@ public class Main {
 			Plant curPlant = closestPlant(curZombie);
 			if(curZombie.getCol() == curPlant.getCol() + 1) {
 				curPlant.hp -= 2;
-				//check if plant is dead
-				boolean plantKilled = killPlant(curPlant);
-				if(curPlant.type == 1 && plantKilled) {
-					sunflowers.remove(deadPlant);
-				} else if((curPlant.type == 2 || curPlant.type == 4) && plantKilled) {
-					shooterPlants.remove(deadPlant);
-				} else if(plantKilled){
-					wallnuts.remove(deadPlant);
-				}
 			} else {
 				b.removePeg(curZombie.getRow(), curZombie.getCol());
 				b.putPeg("zombie", curZombie.getRow(), curZombie.getCol() - 1);
 				curZombie.col -= 1;
-				if(curZombie.hp <= 0) {
-					zombies.remove(i);
-					b.removePeg(curZombie.getRow(), curZombie.getCol());
-				}
 			}
 		}
 	}
@@ -572,7 +564,6 @@ public class Main {
 			if(curPlant.getRow() == curZombie.getRow() && curPlant.getCol() > largest) {
 				largest = curPlant.getCol();
 				thisPlant = curPlant;
-				deadPlant = j;
 			}
 		}
 		for(int j=0;j<sunflowers.size();j++) {
@@ -580,7 +571,6 @@ public class Main {
 			if(curPlant.getRow() == curZombie.getRow() && curPlant.getCol() > largest) {
 				largest = curPlant.getCol();
 				thisPlant = curPlant;
-				deadPlant = j;
 			}
 		}
 		for(int j=0;j< wallnuts.size();j++) {
@@ -588,7 +578,6 @@ public class Main {
 			if(curPlant.getRow() == curZombie.getRow() && curPlant.getCol() > largest) {
 				largest = curPlant.getCol();
 				thisPlant = curPlant;
-				deadPlant = j;
 			}
 		}
 		return thisPlant;
