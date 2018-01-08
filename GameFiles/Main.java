@@ -99,9 +99,10 @@ public class Main {
 
 	//Game Start Flag Var
 	static boolean plantDown = false;
+	static boolean spawnStarted = false;
 	
 	//Game End Flag
-	static boolean isRunning = false;
+	static boolean isRunning = true;
 
 	public static void main(String[] args) {
 
@@ -258,11 +259,12 @@ public class Main {
 		globalTime.scheduleAtFixedRate(animZombies, (long)20000, (long)2000);
 		globalTime.scheduleAtFixedRate(updateClock, (long)1000, (long)1000);
 
-
+		
 		while(isRunning) { //run this while the game is happening
 			
 			//if a sunflower was planted
-			if(plantDown && shooterPlants.size() < 1) {
+			if(plantDown && !spawnStarted) {
+				spawnStarted = true;
 				globalTime.scheduleAtFixedRate(spawn, (long)21000 + seconds * 1000, (long)5000/((minutes * 2) + 1));
 			}
 			
