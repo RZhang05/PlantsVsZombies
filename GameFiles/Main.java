@@ -368,7 +368,7 @@ public class Main {
 				Zombie thisZomb = new Zombie(0,0);
 				//if zombie in lane
 				for(int j=0;j<zombies.size();j++) {
-					Zombie curZombie = zombies.get(i);
+					Zombie curZombie = zombies.get(j);
 					//check for comparison 
 					System.out.println("Comparing " + tempPlant.originRow + " to " + curZombie.getRow());
 					if(curZombie.getRow() == tempPlant.originRow) {
@@ -392,7 +392,11 @@ public class Main {
 							tempPlant.column = tempPlant.column + 1;
 							if(tempPlant.getCol() == smallest) {
 								b.removePeg(tempPlant.getRow(), tempPlant.getCol());
-								tempPlant.column = 9;
+								
+								//reset the plant animation
+								tempPlant.row = tempPlant.originRow;
+								tempPlant.column = tempPlant.originCol;
+								
 								thisZomb.hp -= 2;
 								if(thisZomb.hp <= 0) {
 									//testing for which zombie is dying
