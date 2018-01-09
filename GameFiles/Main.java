@@ -7,6 +7,7 @@ import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -14,14 +15,12 @@ import javax.swing.JLabel;
 //Plant class
 class Plant {
 	//basic points
-	public final int iden;
 	public int row;
 	public int column;
 	public int type;
 	public int originRow;
 	public int originCol;
-	public Plant (int num, int xIn, int yIn, int typeOfPlant) {
-		iden = num; 
+	public Plant ( int xIn, int yIn, int typeOfPlant) {
 		row = xIn; 
 		column = yIn; 
 		type  = typeOfPlant;
@@ -75,10 +74,10 @@ public class Main {
 	static ArrayList<Plant> sunflowers = new ArrayList<Plant>();
 	static ArrayList<Plant> wallnuts = new ArrayList<Plant>();
 	static ArrayList<Zombie> zombies = new ArrayList<Zombie>();
+	static ArrayList<Plant> peas = new ArrayList<Plant>();
 
 	//plants
 	public static int plantSelected = 0;
-	public static int plantCount = 0; //identity number
 
 	//The Board
 	static Board b;
@@ -135,8 +134,7 @@ public class Main {
 		TimerTask spawn = new TimerTask() {
 			@Override
 			public void run() {
-				if(plantDown)
-					spawnZombies();
+				spawnZombies();
 			}
 		};
 
@@ -173,7 +171,7 @@ public class Main {
 		StoredEnergy.setText("Stored Energy: " + sunCount);
 
 		//the Timer for the level
-		gameTimer = new JLabel();
+		gameTimer = new JLabel("Time");
 		minutes = gameTime / 60;
 		seconds = gameTime - (minutes * 60);
 		if(seconds < 10) {
@@ -183,11 +181,10 @@ public class Main {
 		}
 
 		//new buttons and their action listeners
-		JButton button1 = new JButton("Sunflower");
+		JButton button1 = new JButton("Sunflower", new ImageIcon("sunflowerPacket.png"));
 		button1.setActionCommand("Sunflower");
 		button1.setVisible(true);
 		button1.setSize(150,150);
-		button1.setText("SUNFLOWER");
 
 		button1.addActionListener(new ActionListener()
 		{
@@ -199,12 +196,10 @@ public class Main {
 		});
 
 		//another button
-		JButton button2 = new JButton("Pea Shooter");
+		JButton button2 = new JButton("Pea Shooter", new ImageIcon("peashooterPacket.png"));
 		button2.setActionCommand("Pea Shooter");
 		button2.setVisible(true);
 		button2.setSize(150,150);
-		button2.setText("PEA SHOOTER");
-
 		button2.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
@@ -215,11 +210,10 @@ public class Main {
 		});
 
 		//another button
-		JButton button3 = new JButton("Wallnut");
+		JButton button3 = new JButton("Wallnut", new ImageIcon("wallnutPacket.png"));
 		button3.setActionCommand("Wallnut");
 		button3.setVisible(true);
 		button3.setSize(150,150);
-		button3.setText("WALLNUT");
 
 		button3.addActionListener(new ActionListener()
 		{
@@ -231,11 +225,10 @@ public class Main {
 		});
 
 		//another button
-		JButton button4 = new JButton("Double Pea Shooter");
+		JButton button4 = new JButton("Repeater", new ImageIcon("RepeaterPacket.png"));
 		button4.setActionCommand("Double Pea");
 		button4.setVisible(true);
 		button4.setSize(150,150);
-		button4.setText("DOUBLE PEA SHOOTER");
 
 		button4.addActionListener(new ActionListener()
 		{
@@ -262,7 +255,7 @@ public class Main {
 			//if a sunflower was planted
 			if(plantDown && !spawnStarted) {
 				spawnStarted = true;
-				globalTime.scheduleAtFixedRate(spawn, (long)21000 + (seconds * 1000), (long)5000/((minutes * 2) + 1));
+				globalTime.scheduleAtFixedRate(spawn, (long)(21000 + (seconds * 1000)), (long)5000/((minutes * 2) + 1));
 			}
 			
 			
@@ -298,7 +291,7 @@ public class Main {
 								//not enough currency
 								b.displayMessage("Need 100 Stored Energy");
 							} else {
-								Plant p = new Plant(plantCount, grow.getRow(), grow.getCol(), plantSelected);
+								Plant p = new Plant(grow.getRow(), grow.getCol(), plantSelected);
 								sunCount -= 100;
 								shooterPlants.add(p);
 								b.putPeg("peashooter", grow.getRow(), grow.getCol());
@@ -308,7 +301,7 @@ public class Main {
 							if(sunCount < 50) {
 								b.displayMessage("Need 50 Stored Energy");
 							} else {
-								Plant p = new Plant(plantCount, grow.getRow(), grow.getCol(), plantSelected);
+								Plant p = new Plant(grow.getRow(), grow.getCol(), plantSelected);
 								sunCount -= 50;
 								StoredEnergy.setText("Stored Energy: " + sunCount);
 								sunflowers.add(p);
@@ -319,7 +312,7 @@ public class Main {
 							if(sunCount < 150) {
 								b.displayMessage("Need 150 Stored Energy");
 							} else {
-								Plant p = new Plant(plantCount, grow.getRow(), grow.getCol(), plantSelected);
+								Plant p = new Plant(grow.getRow(), grow.getCol(), plantSelected);
 								sunCount -= 150;
 								StoredEnergy.setText("Stored Energy: " + sunCount);
 								shooterPlants.add(p);
@@ -330,7 +323,7 @@ public class Main {
 							if(sunCount < 75) {
 								b.displayMessage("Need 75 Stored Energy");
 							} else {
-								Plant p = new Plant(plantCount, grow.getRow(), grow.getCol(), plantSelected);
+								Plant p = new Plant(grow.getRow(), grow.getCol(), plantSelected);
 								sunCount -= 75;
 								StoredEnergy.setText("Stored Energy: " + sunCount);
 								wallnuts.add(p);
@@ -352,7 +345,7 @@ public class Main {
 	 */
 	public static void animateShooterPlants(ArrayList<Plant> plants) {
 		//for each pea shooter
-		for(int i=0;i<plants.size();i++) { 
+		for(int i=0;i<plants.size();i++) {
 			Plant tempPlant = plants.get(i);
 			if(killPlant(tempPlant)) {
 				b.removePeg(tempPlant.originCol, tempPlant.originRow);
@@ -413,36 +406,30 @@ public class Main {
 							tempPlant.column = tempPlant.originCol;
 						}
 					} else { //DOUBLE PEA SHOOTER
-						if(tempPlant.getCol() < 8) {
+						if(tempPlant.getCol() < 9) {
 							//animation
 							b.removePeg(tempPlant.getRow(), tempPlant.getCol());
 							b.putPeg("peashooter", tempPlant.originRow, tempPlant.originCol);
 							b.putPeg("pea", tempPlant.getRow(),tempPlant.getCol() + 1);
-							b.putPeg("pea", tempPlant.getRow(),tempPlant.getCol() + 2);
 							
 							tempPlant.column = tempPlant.column + 1;
 							if(tempPlant.getCol() == smallest) {
 								b.removePeg(tempPlant.getRow(), tempPlant.getCol());
-								tempPlant.column = 9;
+								
+								//reset the plant animation
+								tempPlant.row = tempPlant.originRow;
+								tempPlant.column = tempPlant.originCol;
+								
+								thisZomb.hp -= 4;
 								if(thisZomb.hp <= 0) {
+									//testing for which zombie is dying
+									System.out.println(zombies.get(index).getRow());
 									zombies.remove(index);
+									
 									b.removePeg(thisZomb.getRow(), thisZomb.getCol());
-									try{Thread.sleep(1);}catch(InterruptedException e){};
 								}
 							}
-							tempPlant.column = tempPlant.column + 1;
-						} else if(tempPlant.getCol() < 9) {
-							b.putPeg("pea", tempPlant.getRow(),tempPlant.getCol() + 1);
-							b.removePeg(tempPlant.getRow(), tempPlant.getCol());
-							tempPlant.row = tempPlant.row;
-							tempPlant.column = tempPlant.column + 1;
 						} else {
-							try {
-								Thread.sleep(1000);
-							} catch (InterruptedException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
 							b.removePeg(tempPlant.getRow(), tempPlant.getCol());
 							tempPlant.row = tempPlant.originRow;
 							tempPlant.column = tempPlant.originCol;
@@ -543,15 +530,20 @@ public class Main {
 				isRunning = false;
 			}
 			//plant is under attack
-			Plant curPlant = closestPlant(curZombie);
-			if(curZombie.getCol() == curPlant.getCol() + 1) {
-				curPlant.hp -= 2;
-			} else {
-				b.removePeg(curZombie.getRow(), curZombie.getCol());
-				b.putPeg("zombie", curZombie.getRow(), curZombie.getCol() - 1);
-				curZombie.col -= 1;
+			if(isRunning) {
+				Plant curPlant = closestPlant(curZombie);
+				if(curZombie.getCol() == curPlant.getCol() + 1) {
+					curPlant.hp -= 2;
+				} else {
+					b.removePeg(curZombie.getRow(), curZombie.getCol());
+					b.putPeg("zombie", curZombie.getRow(), curZombie.getCol() - 1);
+					curZombie.col -= 1;
+				}
 			}
 		}
+		try {
+			Thread.sleep(1);
+		} catch(InterruptedException e){};
 	}
 	
 	/**
@@ -561,7 +553,7 @@ public class Main {
 	 */
 	public static Plant closestPlant(Zombie curZombie) {
 		//default plant
-		Plant thisPlant = new Plant(0,0,0,0);
+		Plant thisPlant = new Plant(0,0,0);
 		int largest = 0;
 		for(int j=0;j<shooterPlants.size();j++) {
 			Plant curPlant = shooterPlants.get(j);
@@ -622,14 +614,6 @@ public class Main {
 			b.removePeg(curZombie.getRow(), curZombie.getCol());
 			b.putPeg("zombie", curZombie.getRow(), curZombie.getCol());
 		}
-	}
-	
-	public static void pause() {
-		try {
-			Thread.sleep(1);
-		} catch (InterruptedException e) {
-			
-		};
 	}
 
 }
