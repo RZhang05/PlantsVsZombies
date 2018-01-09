@@ -6,14 +6,14 @@
 - [ ] Position Plant Elements properly
 
 # Vincent To-Do List
-- [ ] Finish Zombie Class
+- [x] Finish Zombie Class
 - [ ] Finish Zombies
-- [ ] Finish Zombie Spawn Code
+- [x] Finish Zombie Spawn Code
 
 # Collective To-Do List
 - [x] Finish Timer Object
 - [x] Finish Game Board outline
-- [ ] Finish GUI
+- [x] Finish GUI
 - [ ] Finalize Game Design 
 - [ ] Testing Stage
 - [ ] Fix Bugs list in Issues
