@@ -4,6 +4,7 @@
 - [x] Finish Plant Button Implementation
 - [ ] Finish Plants
 - [ ] Position Plant Elements properly
+- [ ] Plant Music Sounds
 
 # Vincent To-Do List
 - [x] Finish Zombie Class
