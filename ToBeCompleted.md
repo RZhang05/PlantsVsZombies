@@ -14,6 +14,7 @@
 - [x] Finish Timer Object
 - [x] Finish Game Board outline
 - [x] Finish GUI
+- [x] Game Music
 - [ ] Finalize Game Design 
 - [ ] Testing Stage
 - [ ] Fix Bugs list in Issues
