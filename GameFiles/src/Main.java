@@ -2,11 +2,18 @@
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -20,6 +27,7 @@ class Plant {
 	public int type;
 	public int originRow;
 	public int originCol;
+	public int lastShot;
 	public Plant ( int xIn, int yIn, int typeOfPlant) {
 		row = xIn; 
 		column = yIn; 
@@ -74,7 +82,6 @@ public class Main {
 	static ArrayList<Plant> sunflowers = new ArrayList<Plant>();
 	static ArrayList<Plant> wallnuts = new ArrayList<Plant>();
 	static ArrayList<Zombie> zombies = new ArrayList<Zombie>();
-	static ArrayList<Plant> peas = new ArrayList<Plant>();
 
 	//plants
 	public static int plantSelected = 0;
@@ -96,7 +103,7 @@ public class Main {
 	//Game Start Flag Var
 	static boolean plantDown = false;
 	static boolean spawnStarted = false;
-	
+
 	//Game End Flag
 	static boolean isRunning = true;
 
@@ -123,7 +130,7 @@ public class Main {
 				animateWallnut(wallnuts);
 			}
 		};
-		
+
 		TimerTask animZombies = new TimerTask() {
 			@Override
 			public void run() {
@@ -144,11 +151,18 @@ public class Main {
 				incrementClock();
 			}
 		};
-		
+
 		TimerTask keepZombies = new TimerTask() {
 			@Override
 			public void run() {
 				keepZombieSprites();
+			}
+		};
+		
+		TimerTask playZombieNoises = new TimerTask() {
+			@Override
+			public void run() {
+				playRandomGroans();
 			}
 		};
 
@@ -238,7 +252,7 @@ public class Main {
 				b.displayMessage("Selecting Double Pea Shooter...");
 			}
 		});
-		
+
 		//timer events keeping character sprites in place
 		globalTime.scheduleAtFixedRate(keepZombies, (long)1000, (long)250);
 
@@ -248,17 +262,18 @@ public class Main {
 		globalTime.scheduleAtFixedRate(wallnutChange, (long)1000, (long)400);
 		globalTime.scheduleAtFixedRate(animZombies, (long)20000, (long)2000);
 		globalTime.scheduleAtFixedRate(updateClock, (long)1000, (long)1000);
+		globalTime.schedule(playZombieNoises, (long)21000, (long)6500);
 
-		
+
 		while(isRunning) { //run this while the game is happening
-			
+
 			//if a sunflower was planted
 			if(plantDown && !spawnStarted) {
 				spawnStarted = true;
-				globalTime.scheduleAtFixedRate(spawn, (long)(21000 + (seconds * 1000)), (long)5000/((minutes * 2) + 1));
+				playBackgroundMusic();
+				globalTime.scheduleAtFixedRate(spawn, (long)(21000), (long)5000/((minutes * 2) + 1));
 			}
-			
-			
+
 			if(startScreen.menuVisible) {
 				startScreen.setVisible(true);
 				mainGame.repaint();
@@ -291,6 +306,7 @@ public class Main {
 								//not enough currency
 								b.displayMessage("Need 100 Stored Energy");
 							} else {
+								playPlantedNoise();
 								Plant p = new Plant(grow.getRow(), grow.getCol(), plantSelected);
 								sunCount -= 100;
 								shooterPlants.add(p);
@@ -301,6 +317,7 @@ public class Main {
 							if(sunCount < 50) {
 								b.displayMessage("Need 50 Stored Energy");
 							} else {
+								playPlantedNoise();
 								Plant p = new Plant(grow.getRow(), grow.getCol(), plantSelected);
 								sunCount -= 50;
 								StoredEnergy.setText("Stored Energy: " + sunCount);
@@ -312,6 +329,7 @@ public class Main {
 							if(sunCount < 150) {
 								b.displayMessage("Need 150 Stored Energy");
 							} else {
+								playPlantedNoise();
 								Plant p = new Plant(grow.getRow(), grow.getCol(), plantSelected);
 								sunCount -= 150;
 								StoredEnergy.setText("Stored Energy: " + sunCount);
@@ -323,6 +341,7 @@ public class Main {
 							if(sunCount < 75) {
 								b.displayMessage("Need 75 Stored Energy");
 							} else {
+								playPlantedNoise();
 								Plant p = new Plant(grow.getRow(), grow.getCol(), plantSelected);
 								sunCount -= 75;
 								StoredEnergy.setText("Stored Energy: " + sunCount);
@@ -353,7 +372,7 @@ public class Main {
 			} else {
 				//if a zombie is in the lane
 				boolean zombieInLane = false;
-			
+
 				int smallest = Integer.MAX_VALUE;
 				//the index of the closed zombie to the plant
 				int index = 0;
@@ -373,8 +392,17 @@ public class Main {
 					}
 				}
 				if(zombieInLane) {
+					
+					//cooldown
+					if(tempPlant.lastShot != 0 && tempPlant.lastShot >= gameTime && tempPlant.getCol() <= tempPlant.originCol) {
+						System.out.println("Cooldown");
+						return; //1 second has passed?
+					}
+					
+					tempPlant.lastShot = gameTime;
+					System.out.println(tempPlant.lastShot + " compared to: " + gameTime);
 					// Testing for zombie in lane
-					System.out.println("Shooting at Zombie");
+					// System.out.println("Shooting at Zombie");
 					if(tempPlant.type == 2) { //PEA SHOOTER
 						if(tempPlant.getCol() < 9) {
 							//animation
@@ -382,20 +410,26 @@ public class Main {
 							b.putPeg("peashooter", tempPlant.originRow, tempPlant.originCol);
 							b.putPeg("pea", tempPlant.getRow(),tempPlant.getCol() + 1);
 							
+							//shooting noise
+							if(tempPlant.getCol() == tempPlant.originCol + 1) {
+								playPeaShoot();
+							}
+
 							tempPlant.column = tempPlant.column + 1;
 							if(tempPlant.getCol() == smallest) {
 								b.removePeg(tempPlant.getRow(), tempPlant.getCol());
-								
+
 								//reset the plant animation
 								tempPlant.row = tempPlant.originRow;
 								tempPlant.column = tempPlant.originCol;
-								
+
 								thisZomb.hp -= 2;
+								playHitZombie();
 								if(thisZomb.hp <= 0) {
 									//testing for which zombie is dying
 									System.out.println(zombies.get(index).getRow());
 									zombies.remove(index);
-									
+
 									b.removePeg(thisZomb.getRow(), thisZomb.getCol());
 									try{Thread.sleep(1);}catch(InterruptedException e){};
 								}
@@ -409,23 +443,29 @@ public class Main {
 						if(tempPlant.getCol() < 9) {
 							//animation
 							b.removePeg(tempPlant.getRow(), tempPlant.getCol());
-							b.putPeg("peashooter", tempPlant.originRow, tempPlant.originCol);
+							b.putPeg("doublepea", tempPlant.originRow, tempPlant.originCol);
 							b.putPeg("pea", tempPlant.getRow(),tempPlant.getCol() + 1);
 							
+							//shooting noise
+							if(tempPlant.getCol() == tempPlant.originCol + 1) {
+								playPeaShoot();
+							}
+
 							tempPlant.column = tempPlant.column + 1;
 							if(tempPlant.getCol() == smallest) {
 								b.removePeg(tempPlant.getRow(), tempPlant.getCol());
-								
+
 								//reset the plant animation
 								tempPlant.row = tempPlant.originRow;
 								tempPlant.column = tempPlant.originCol;
-								
+
 								thisZomb.hp -= 4;
+								playHitZombie();
 								if(thisZomb.hp <= 0) {
 									//testing for which zombie is dying
 									System.out.println(zombies.get(index).getRow());
 									zombies.remove(index);
-									
+
 									b.removePeg(thisZomb.getRow(), thisZomb.getCol());
 								}
 							}
@@ -532,8 +572,10 @@ public class Main {
 			//plant is under attack
 			if(isRunning) {
 				Plant curPlant = closestPlant(curZombie);
-				if(curZombie.getCol() == curPlant.getCol() + 1) {
+				if(curZombie.getCol() == curPlant.originCol + 1) {
 					curPlant.hp -= 2;
+					playZombieEating();
+					System.out.println("attacking plant: " + curPlant.originCol);
 				} else {
 					b.removePeg(curZombie.getRow(), curZombie.getCol());
 					b.putPeg("zombie", curZombie.getRow(), curZombie.getCol() - 1);
@@ -545,7 +587,7 @@ public class Main {
 			Thread.sleep(1);
 		} catch(InterruptedException e){};
 	}
-	
+
 	/**
 	 * Check for the plant closest to the zombie in an array
 	 * pre: Number of Plants > 0
@@ -557,22 +599,22 @@ public class Main {
 		int largest = 0;
 		for(int j=0;j<shooterPlants.size();j++) {
 			Plant curPlant = shooterPlants.get(j);
-			if(curPlant.getRow() == curZombie.getRow() && curPlant.getCol() > largest) {
-				largest = curPlant.getCol();
+			if(curPlant.getRow() == curZombie.getRow() && curPlant.originCol > largest) {
+				largest = curPlant.originCol;
 				thisPlant = curPlant;
 			}
 		}
 		for(int j=0;j<sunflowers.size();j++) {
 			Plant curPlant = sunflowers.get(j);
-			if(curPlant.getRow() == curZombie.getRow() && curPlant.getCol() > largest) {
-				largest = curPlant.getCol();
+			if(curPlant.getRow() == curZombie.getRow() && curPlant.originCol > largest) {
+				largest = curPlant.originCol;
 				thisPlant = curPlant;
 			}
 		}
 		for(int j=0;j< wallnuts.size();j++) {
 			Plant curPlant = wallnuts.get(j);
-			if(curPlant.getRow() == curZombie.getRow() && curPlant.getCol() > largest) {
-				largest = curPlant.getCol();
+			if(curPlant.getRow() == curZombie.getRow() && curPlant.originCol > largest) {
+				largest = curPlant.originCol;
 				thisPlant = curPlant;
 			}
 		}
@@ -601,18 +643,148 @@ public class Main {
 			gameTimer.setText("Time: " + minutes + ":" + seconds);
 		}
 	}
-	
+
 	/**
 	 * Keep Zombie Sprites on screen
 	 * pre: Zombie ArrayList > 0
 	 * post: Zombie sprite
 	 */
-	
+
 	public static void keepZombieSprites() {
 		for(int i=0;i<zombies.size();i++) {
 			Zombie curZombie = zombies.get(i);
 			b.removePeg(curZombie.getRow(), curZombie.getCol());
 			b.putPeg("zombie", curZombie.getRow(), curZombie.getCol());
+		}
+	}
+
+	
+	//Music and Sound Effects
+	public static void playPlantedNoise() {
+		try {
+			// Open an audio input stream.           
+			File soundFile = new File("planted.wav");
+			AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundFile);              
+			// Get a sound clip resource.
+			Clip clip = AudioSystem.getClip();
+			// Open audio clip and load samples from the audio input stream.
+			clip.open(audioIn);
+			clip.start();
+		} catch (UnsupportedAudioFileException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (LineUnavailableException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void playPeaShoot() {
+		try {
+			// Open an audio input stream.           
+			File soundFile = new File("shoot.wav");
+			AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundFile);              
+			// Get a sound clip resource.
+			Clip clip = AudioSystem.getClip();
+			// Open audio clip and load samples from the audio input stream.
+			clip.open(audioIn);
+			clip.start();
+		} catch (UnsupportedAudioFileException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (LineUnavailableException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void playHitZombie() {
+		try {
+			// Open an audio input stream.           
+			File soundFile = new File("splat.wav");
+			AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundFile);              
+			// Get a sound clip resource.
+			Clip clip = AudioSystem.getClip();
+			// Open audio clip and load samples from the audio input stream.
+			clip.open(audioIn);
+			clip.start();
+		} catch (UnsupportedAudioFileException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (LineUnavailableException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void playZombieEating() {
+		try {
+			// Open an audio input stream.           
+			File soundFile = new File("ZombieBite.wav");
+			AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundFile);              
+			// Get a sound clip resource.
+			Clip clip = AudioSystem.getClip();
+			// Open audio clip and load samples from the audio input stream.
+			clip.open(audioIn);
+			clip.start();
+		} catch (UnsupportedAudioFileException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (LineUnavailableException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void playRandomGroans() {
+		if(zombies.size() > 0) {
+			Random r = new Random();
+			int ran = r.nextInt(3) + 1;
+			try {
+				// Open an audio input stream.   
+				if(ran % 2 == 0) {
+					File soundFile = new File("Groan.wav");
+					AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundFile);              
+					// Get a sound clip resource.
+					Clip clip = AudioSystem.getClip();
+					// Open audio clip and load samples from the audio input stream.
+					clip.open(audioIn);
+					clip.start();
+				} else {
+					File soundFile = new File("Groan2.wav");
+					AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundFile);              
+					// Get a sound clip resource.
+					Clip clip = AudioSystem.getClip();
+					// Open audio clip and load samples from the audio input stream.
+					clip.open(audioIn);
+					clip.start();
+				}
+			} catch (UnsupportedAudioFileException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (LineUnavailableException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public static void playBackgroundMusic() {
+		try {
+			// Open an audio input stream.           
+			File soundFile = new File("grassLevel.wav");
+			AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundFile);              
+			// Get a sound clip resource.
+			Clip clip = AudioSystem.getClip();
+			// Open audio clip and load samples from the audio input stream.
+			clip.open(audioIn);
+			clip.start();
+		} catch (UnsupportedAudioFileException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (LineUnavailableException e) {
+			e.printStackTrace();
 		}
 	}
 
