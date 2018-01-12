@@ -5,8 +5,6 @@
 - [ ] Finish Plants
 - [ ] Position Plant Elements properly
 - [ ] Plant Music Sounds
-
-# Vincent To-Do List
 - [x] Finish Zombie Class
 - [ ] Finish Zombies
 - [x] Finish Zombie Spawn Code
