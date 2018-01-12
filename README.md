@@ -1,5 +1,5 @@
 # Plants vs Zombies
-Raymond Zhang and Vincent Chen's ICS3U1 Culminating Activity
+Raymond Zhang's ICS3U1 Culminating Activity
 
 ## Gameplay
 #### Initial Board
