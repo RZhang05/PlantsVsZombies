@@ -1,13 +1,16 @@
-# Raymond To-Do List
+# General To-Do List
 - [x] Finish Plants Class
 - [x] Finish Plant Buttons
 - [x] Finish Plant Button Implementation
 - [ ] Finish Plants
 - [ ] Position Plant Elements properly
-- [ ] Plant Music Sounds
+- [x] Plant Music Sounds
 - [x] Finish Zombie Class
-- [ ] Finish Zombies
-- [x] Finish Zombie Spawn Code
+- [x] Finish Zombies
+- [ ] Finish Zombie Spawn Code
+- [ ] Finish Menu and End Screen implementation
+- [ ] Finish Levels
+- [ ] Zombie Sprites
 
 # Collective To-Do List
 - [x] Finish Timer Object
