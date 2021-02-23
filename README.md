@@ -1,5 +1,5 @@
 # Plants vs Zombies
-Raymond Zhang's ICS3U1 Culminating Activity
+A recreation of Plants vs Zombies created as a final project for ICS. 
 
 ## Gameplay
 #### Initial Board
